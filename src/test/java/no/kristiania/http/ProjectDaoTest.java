@@ -1,6 +1,5 @@
 package no.kristiania.http;
 
-import org.assertj.core.api.Assertions;
 import org.flywaydb.core.Flyway;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,10 +8,14 @@ import org.junit.jupiter.api.Test;
 import java.sql.SQLException;
 import java.util.Random;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 
 public class ProjectDaoTest {
 
     private Random random = new Random();
+    private JdbcDataSource dataSource;
+    private ProjectDao dao;
 
     /*@BeforeEach
     void setUp() throws SQLException {
@@ -25,20 +28,32 @@ public class ProjectDaoTest {
         dao = new ProjectDao(dataSource);
     } */
 
-    @Test
-    void ShouldListSavedProjects() throws SQLException {
-        JdbcDataSource dataSource = new JdbcDataSource();
+    @BeforeEach
+    void setUp() {
+        dataSource = new JdbcDataSource();
         dataSource.setUrl("jdbc:h2:mem:myTestDatabase;DB_CLOSE_DELAY=-1");
         Flyway.configure().dataSource(dataSource).load().migrate();
+        dao = new ProjectDao(dataSource);
+    }
 
-        ProjectDao dao = new ProjectDao(dataSource);
+    @Test
+    void ShouldListSavedProjects() throws SQLException {
         Project project = sampleProject();
-
         dao.insert(project);
-        Assertions.assertThat(dao.listAll())
+        assertThat(dao.listAll())
                 .extracting(Project::getName)
                 .contains(project.getName());
     }
+
+    @Test
+    public void shouldRetrieveSavedProduct() throws SQLException {
+        Project project = sampleProject();
+        dao.insert(project);
+        assertThat(project).hasNoNullFieldsOrProperties();
+        assertThat(dao.retrieve(project.getId()));
+                //.isEqualToComparingFieldByField(project);
+    }
+
 
     private Project sampleProject() {
         Project project = new Project();

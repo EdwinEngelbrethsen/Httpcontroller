@@ -1,43 +1,41 @@
 package no.kristiania.http;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
-public class ProjectDao {
-
-    private ArrayList<Project> projects = new ArrayList<>();
-    private DataSource dataSource;
+public class ProjectDao extends AbstractDao<Project> {
 
     public ProjectDao(DataSource dataSource) {
-        this.dataSource = dataSource;
+        super(dataSource);
     }
 
     public void insert(Project project) throws SQLException {
-        try (Connection connection = dataSource.getConnection()) {
-          try (PreparedStatement statement = connection.prepareStatement("insert into PROJECTS (name) values (?)")) {
-              statement.setString(1, project.getName());
-              statement.executeUpdate();
-          }
-        }
-        projects.add(project);
+        long id = insert(project, "insert into PROJECTS (name) values (?)");
+        project.setId(id);
+    }
+
+    @Override
+    protected void mapToStatement(Project project, PreparedStatement statement) throws SQLException {
+        statement.setString(1, project.getName());
     }
 
     public List<Project> listAll() throws SQLException {
-        try (Connection conn = dataSource.getConnection()) {
-            try (PreparedStatement stmt = conn.prepareStatement("select * from PROJECTS")) {
-                try (ResultSet rs = stmt.executeQuery()) {
-                    List<Project> result = new ArrayList<>();
-                    while (rs.next()) {
-                        result.add(new Project());
-                    }
-                }
-            }
-        }
-        return projects;
+        return listAll("select * from PROJECTS");
     }
+
+    @Override
+    protected Project mapFromResultSet(ResultSet rs) throws SQLException {
+        Project project = new Project();
+        project.setId(rs.getLong("id"));
+        project.setName(rs.getString("name"));
+        return project;
+    }
+
+    public Project retrieve(long id) throws SQLException {
+        return retrieve(id, "select * from PROJECTS where id = ?");
+    }
+
 }
