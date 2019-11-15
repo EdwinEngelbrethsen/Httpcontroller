@@ -1,2 +1,7 @@
 # Project exclude paths
-/target/
+.idea/
+.DS_Store
+*.docx.idea
+*.iml
+target/
+task-manager.properties
